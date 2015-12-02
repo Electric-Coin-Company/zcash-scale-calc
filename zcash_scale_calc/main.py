@@ -121,6 +121,7 @@ def parse_args(args):
     add_argument(
         '--lifetime',
         dest='LIFETIME_YEAR',
+        type=U.YEAR,
         default=DEFAULT_MAX_LIFETIME_YEAR,
         help='Maximum network lifetime in years.',
     )
