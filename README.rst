@@ -61,3 +61,9 @@ Usage
      --lifetime LIFETIME_YEAR
                            Maximum network lifetime in years. Default: 200 [YEAR]
 
+Development
+===========
+
+* source code: https://github.com/Electric-Coin-Company/zcash-scale-calc
+* issues: https://github.com/Electric-Coin-Company/zerocashd
+
