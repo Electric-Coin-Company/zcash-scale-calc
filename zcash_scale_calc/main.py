@@ -2,8 +2,8 @@
 
 import sys
 import argparse
-from decimal import Decimal
-from dimana import Dimensional
+from decimal import Decimal, ROUND_UP
+from dimana import Dimana
 
 
 # dimana units types:
@@ -20,9 +20,9 @@ class Units (object):
         ]
 
         for unit in units:
-            setattr(self, Dimensional.get_dimension(unit))
+            setattr(self, unit, Dimana.get_dimension(unit))
 
-U = Units
+U = Units()
 
 # Invariants:
 # This ignores leap-days/seconds:
@@ -66,20 +66,21 @@ def main(args = sys.argv[1:]):
 
     total_commits = (
         opts.COMMIT_PER_POUR *
-        opts.POUR_PER_SEC *
+        opts.MAX_POUR_PER_SEC *
         opts.LIFETIME_YEAR *
         SEC_PER_YEAR
     )
 
     log2_tc = total_commits.value.ln() / Decimal('2').ln()
+    log2_tc_ceil = log2_tc.quantize(Decimal('1'), rounding=ROUND_UP)
 
     print REPORT_TMPL.format(
         commit_per_pour = opts.COMMIT_PER_POUR,
-        pour_per_sec = opts.POUR_PER_SEC,
+        pour_per_sec = opts.MAX_POUR_PER_SEC,
         lifetime_year = opts.LIFETIME_YEAR,
         total_commits = total_commits,
         log2_total_commits = log2_tc,
-        min_merkle_tree_height = 'FIXME',
+        min_merkle_tree_height = log2_tc_ceil,
     )
 
 
@@ -96,7 +97,7 @@ def parse_args(args):
     # This should be dimana functionality:
     def make_unit_parser(unitone):
         def parse(arg):
-            return Dimensional(arg) * unitone
+            return Dimana(arg) * unitone
         parse.__doc__ = 'A {} value.'.format(unitone.dimstr)
 
         return parse
