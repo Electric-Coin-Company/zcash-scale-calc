@@ -17,6 +17,7 @@ class Units (object):
             'HOUR',
             'DAY',
             'YEAR',
+            'BRANCH',
         ]
 
         for unit in units:
@@ -42,6 +43,7 @@ DEFAULT_MAX_POUR_PER_SEC = U.POUR('5000') / U.SEC.one
 DEFAULT_MAX_LIFETIME_YEAR = U.YEAR('200')
 
 DEFAULT_COMMIT_PER_POUR = U.COMMIT('2') / U.POUR.one
+DEFAULT_BRANCH_FACTOR = U.BRANCH('2')
 
 
 # The output result:
@@ -53,7 +55,7 @@ Max pour rate: {pour_per_sec}
 Network lifetime: {lifetime_year}
 
 Total commits over network lifetime: {total_commits}
-log_2 of total commits: {log2_total_commits}
+log_{branch_factor} of total commits: {log_total_commits}
 Minimal Merkle Tree height: {min_merkle_tree_height}
 '''
 
@@ -71,16 +73,17 @@ def main(args = sys.argv[1:]):
         SEC_PER_YEAR
     )
 
-    log2_tc = total_commits.value.ln() / Decimal('2').ln()
-    log2_tc_ceil = log2_tc.quantize(Decimal('1'), rounding=ROUND_UP)
+    log_tc = total_commits.value.ln() / opts.BRANCH_FACTOR.value.ln()
+    log_tc_ceil = log_tc.quantize(Decimal('1'), rounding=ROUND_UP)
 
     print REPORT_TMPL.format(
         commit_per_pour = opts.COMMIT_PER_POUR,
         pour_per_sec = opts.MAX_POUR_PER_SEC,
         lifetime_year = opts.LIFETIME_YEAR,
         total_commits = total_commits,
-        log2_total_commits = log2_tc,
-        min_merkle_tree_height = log2_tc_ceil,
+        branch_factor = opts.BRANCH_FACTOR,
+        log_total_commits = log_tc,
+        min_merkle_tree_height = log_tc_ceil,
     )
 
 
@@ -124,6 +127,14 @@ def parse_args(args):
         type=U.YEAR,
         default=DEFAULT_MAX_LIFETIME_YEAR,
         help='Maximum network lifetime in years.',
+    )
+
+    add_argument(
+        '--branch-factor',
+        dest='BRANCH_FACTOR',
+        type=U.BRANCH,
+        default=DEFAULT_BRANCH_FACTOR,
+        help='Branching factor of Merkle tree.',
     )
 
     return p.parse_args(args)
