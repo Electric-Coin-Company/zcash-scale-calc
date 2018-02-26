@@ -13,6 +13,7 @@ HOUR = Units('HOUR')
 DAY = Units('DAY')
 YEAR = Units('YEAR')
 BRANCH = Units('BRANCH')
+LEVEL = Units('LEVEL')
 
 
 # Invariants:
@@ -30,7 +31,6 @@ DEFAULT_MAX_COMMITMENTS_PER_SEC = COMMIT('10000') / SEC.one
 # rate as of ~2015
 # ref: https://en.bitcoin.it/wiki/Scalability#Scalability_targets
 
-DEFAULT_MAX_LIFETIME_YEAR = YEAR('200')
 DEFAULT_BRANCH_FACTOR = BRANCH('2')
 
 
@@ -52,6 +52,11 @@ def main(args=sys.argv[1:]):
     zcash capacity calculations.
     """
     opts = parse_args(args)
+    opts.cmdfunc(opts)
+
+
+def depth_from_lifetime(opts):
+    """Calculate tree depth given target lifetime."""
 
     total_commits = (
         opts.MAX_COMMITMENTS_PER_SEC *
@@ -72,17 +77,37 @@ def main(args=sys.argv[1:]):
     )
 
 
-def parse_args(args):
-    p = argparse.ArgumentParser(description=main.__doc__)
+def lifetime_from_depth(opts):
+    """Calculate lifetime given tree depth."""
 
-    def add_argument(*args, **kw):
+    total_commits = COMMIT(2 ** opts.DEPTH.amount)
+    lifetime = total_commits / (opts.MAX_COMMITMENTS_PER_SEC * SEC_PER_YEAR)
+
+    log_tc = total_commits.amount.ln() / opts.BRANCH_FACTOR.amount.ln()
+    log_tc_ceil = log_tc.quantize(Decimal('1'), rounding=ROUND_UP)
+
+    print REPORT_TMPL.format(
+        commitments_per_sec=opts.MAX_COMMITMENTS_PER_SEC,
+        lifetime_year=lifetime,
+        total_commits=total_commits,
+        branch_factor=opts.BRANCH_FACTOR,
+        log_total_commits=log_tc,
+        min_merkle_tree_height=log_tc_ceil,
+    )
+
+
+def parse_args(args):
+    def add_argument(parser, *args, **kw):
         if 'default' in kw and 'help' in kw:
             defval = kw['default']
             kw['help'] += ' Default: {}'.format(defval)
 
-        p.add_argument(*args, **kw)
+        parser.add_argument(*args, **kw)
+
+    p = argparse.ArgumentParser(description=main.__doc__)
 
     add_argument(
+        p,
         '--output-rate',
         dest='MAX_COMMITMENTS_PER_SEC',
         type=(COMMIT/SEC),
@@ -91,19 +116,44 @@ def parse_args(args):
     )
 
     add_argument(
-        '--lifetime',
-        dest='LIFETIME_YEAR',
-        type=YEAR,
-        default=DEFAULT_MAX_LIFETIME_YEAR,
-        help='Maximum network lifetime in years.',
-    )
-
-    add_argument(
+        p,
         '--branch-factor',
         dest='BRANCH_FACTOR',
         type=BRANCH,
         default=DEFAULT_BRANCH_FACTOR,
         help='Branching factor of Merkle tree.',
+    )
+
+    subp = p.add_subparsers()
+
+    dflp = subp.add_parser(
+        'depth-from-lifetime',
+        help=depth_from_lifetime.__doc__,
+    )
+    dflp.set_defaults(cmdfunc=depth_from_lifetime)
+
+    add_argument(
+        dflp,
+        '--lifetime',
+        dest='LIFETIME_YEAR',
+        type=YEAR,
+        required=True,
+        help='Maximum network lifetime in years.',
+    )
+
+    lfdp = subp.add_parser(
+        'lifetime-from-depth',
+        help=lifetime_from_depth.__doc__,
+    )
+    lfdp.set_defaults(cmdfunc=lifetime_from_depth)
+
+    add_argument(
+        lfdp,
+        '--depth',
+        dest='DEPTH',
+        type=LEVEL,
+        required=True,
+        help='Commitment tree depth.',
     )
 
     return p.parse_args(args)
