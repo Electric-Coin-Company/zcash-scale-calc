@@ -64,17 +64,7 @@ def depth_from_lifetime(opts):
         SEC_PER_YEAR
     )
 
-    log_tc = total_commits.amount.ln() / opts.BRANCH_FACTOR.amount.ln()
-    log_tc_ceil = log_tc.quantize(Decimal('1'), rounding=ROUND_UP)
-
-    print REPORT_TMPL.format(
-        commitments_per_sec=opts.MAX_COMMITMENTS_PER_SEC,
-        lifetime_year=opts.LIFETIME_YEAR,
-        total_commits=total_commits,
-        branch_factor=opts.BRANCH_FACTOR,
-        log_total_commits=log_tc,
-        min_merkle_tree_height=log_tc_ceil,
-    )
+    print_report(opts, total_commits, opts.LIFETIME_YEAR)
 
 
 def lifetime_from_depth(opts):
@@ -83,15 +73,19 @@ def lifetime_from_depth(opts):
     total_commits = COMMIT(2 ** opts.DEPTH.amount)
     lifetime = total_commits / (opts.MAX_COMMITMENTS_PER_SEC * SEC_PER_YEAR)
 
+    print_report(opts, total_commits, lifetime)
+
+
+def print_report(opts, total_commits, lifetime):
     log_tc = total_commits.amount.ln() / opts.BRANCH_FACTOR.amount.ln()
     log_tc_ceil = log_tc.quantize(Decimal('1'), rounding=ROUND_UP)
 
     print REPORT_TMPL.format(
         commitments_per_sec=opts.MAX_COMMITMENTS_PER_SEC,
-        lifetime_year=lifetime,
+        lifetime_year=pretty_disp(lifetime),
         total_commits=total_commits,
         branch_factor=opts.BRANCH_FACTOR,
-        log_total_commits=log_tc,
+        log_total_commits='{:.2f}'.format(log_tc),
         min_merkle_tree_height=log_tc_ceil,
     )
 
@@ -157,6 +151,11 @@ def parse_args(args):
     )
 
     return p.parse_args(args)
+
+
+def pretty_disp(value, precision=2):
+    """A string repr of a value with only precision digits after decimal."""
+    return '{:.2f} {}'.format(value.amount, value.units)
 
 
 if __name__ == '__main__':
