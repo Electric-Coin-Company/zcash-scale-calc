@@ -49,7 +49,7 @@ Minimal Merkle Tree height: {min_merkle_tree_height}
 
 def main(args=sys.argv[1:]):
     """
-    zcash scale calculations.
+    zcash capacity calculations.
     """
     opts = parse_args(args)
 
