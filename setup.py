@@ -3,9 +3,13 @@
 from setuptools import setup, find_packages
 
 
+description = '''
+Back-of-the-scripted-envelope calculations for zcash capacity parameters.
+'''.strip()
+
 setup(
     name='zcash-scale-calc',
-    description='Back-of-the-scripted-envelope calculations for zcash scale parameters.',
+    description=description,
     version='0.1.dev0',
     author='Nathan Wilcox',
     author_email='nejucomo@gmail.com',
@@ -15,7 +19,7 @@ setup(
     packages=find_packages(),
 
     install_requires=[
-        'dimana >= 0.1.dev0',
+        'dimana == 0.3.0',
         ],
 
     entry_points={
